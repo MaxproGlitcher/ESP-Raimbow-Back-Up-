@@ -9,6 +9,20 @@ local function connect(signal, callback)
 	return connection
 end
 
+local function unload()
+	for _, connection in ipairs(Connections) do
+		if connection.Connected then
+			connection:Disconnect()
+		end
+	end
+	table.clear(Connections)
+	
+	if ScreenGui then
+		ScreenGui:Destroy()
+	end
+end
+_G.ESP_RAINBOW_DELUXE_UNLOAD = unload
+
 local Services = setmetatable({}, {
 	__index = function(self, name)
 		local success, service = pcall(function()
@@ -22,39 +36,34 @@ local Services = setmetatable({}, {
 	end
 })
 
-
 local lpr = Services.Players.LocalPlayer
 local camera = Services.Workspace.CurrentCamera
 local worldToViewportPoint = camera.WorldToViewportPoint
 
 local Settings = {
-    TeamMode = 0,
-    ESPEnabled = true,
-    HealthBarEnabled = true,
-    XRayEnabled = false,
-    TracersEnabled = true,
-    BoxesEnabled = true,
-    NamesEnabled = true,
-    ShowDistance = true,
-    ShowHealth = true,
-    RainbowMode = true,
-    ChamsEnabled = false,
-    HeadDotEnabled = false,
-    SkeletonEnabled = false
+	TeamMode = 0,
+	ESPEnabled = true,
+	HealthBarEnabled = true,
+	XRayEnabled = false,
+	TracersEnabled = true,
+	BoxesEnabled = true,
+	NamesEnabled = true,
+	ShowDistance = true,
+	ShowHealth = true,
+	RainbowMode = true,
+	ChamsEnabled = false,
+	HeadDotEnabled = false,
+	SkeletonEnabled = false
 }
 
 local PlayerData = {
-    Tracers = {},
-    InfoTexts = {},
-    Hitboxes = {},
-    HealthBars = {},
-    HeadDots = {},
-    Skeletons = {}
+	Tracers = {},
+	InfoTexts = {},
+	Hitboxes = {},
+	HealthBars = {},
+	HeadDots = {},
+	Skeletons = {}
 }
-
-lpr = Services.Players.LocalPlayer
-camera = Services.Workspace.CurrentCamera
-worldToViewportPoint = camera.WorldToViewportPoint
 
 local function rainbowColor(t)
 	local r = math.floor(math.sin(t + 0) * 127 + 128)
@@ -64,15 +73,15 @@ local function rainbowColor(t)
 end
 
 local function getColor(t, id)
-	if rainbowMode then
+	if Settings.RainbowMode then
 		return rainbowColor(t + (id or 0) * 0.1)
 	end
 	return Color3.fromRGB(255, 40, 40)
 end
 
 local function getTeamModeText()
-	if teamMode == 1 then return "Enemies"
-	elseif teamMode == 2 then return "Team"
+	if Settings.TeamMode == 1 then return "Enemies"
+	elseif Settings.TeamMode == 2 then return "Team"
 	else return "All" end
 end
 
@@ -82,7 +91,7 @@ local function applyXRay()
 			if v:IsA("BasePart") then
 				local char = v.Parent
 				if not (char and char:FindFirstChildWhichIsA("Humanoid")) and not (char and char.Parent and char.Parent:FindFirstChildWhichIsA("Humanoid")) then
-					v.LocalTransparencyModifier = xrayEnabled and 0.7 or 0
+					v.LocalTransparencyModifier = Settings.XRayEnabled and 0.7 or 0
 				end
 			end
 		end
@@ -203,9 +212,9 @@ local function applyChams(player, on, col)
 end
 
 local function shouldShow(player)
-	if teamMode == 0 then return true end
-	if teamMode == 1 then return player.Team ~= lpr.Team end
-	if teamMode == 2 then return player.Team == lpr.Team end
+	if Settings.TeamMode == 0 then return true end
+	if Settings.TeamMode == 1 then return player.Team ~= lpr.Team end
+	if Settings.TeamMode == 2 then return player.Team == lpr.Team end
 	return true
 end
 
@@ -234,13 +243,13 @@ local function update()
 		camera = Services.Workspace.CurrentCamera or camera
 		if not camera then return end
 		worldToViewportPoint = camera.WorldToViewportPoint
-		if not espEnabled or not lpr.Character or not lpr.Character:FindFirstChild("HumanoidRootPart") then
-			for _, v in pairs(playerTracers) do if v then v.Visible = false end end
-			for _, v in pairs(playerInfoTexts) do if v and v.gui then v.gui.Enabled = false end end
-			for _, v in pairs(playerHitboxes) do if v then v.Visible = false end end
-			for _, v in pairs(playerHealthBars) do if v then v.bg.Visible = false v.bar.Visible = false end end
-			for _, v in pairs(playerHeadDots) do if v then v.Visible = false end end
-			for _, sk in pairs(playerSkeletons) do for _, l in pairs(sk) do if l then l.Visible = false end end end
+		if not Settings.ESPEnabled or not lpr.Character or not lpr.Character:FindFirstChild("HumanoidRootPart") then
+			for _, v in pairs(PlayerData.Tracers) do if v then v.Visible = false end end
+			for _, v in pairs(PlayerData.InfoTexts) do if v and v.gui then v.gui.Enabled = false end end
+			for _, v in pairs(PlayerData.Hitboxes) do if v then v.Visible = false end end
+			for _, v in pairs(PlayerData.HealthBars) do if v then v.bg.Visible = false v.bar.Visible = false end end
+			for _, v in pairs(PlayerData.HeadDots) do if v then v.Visible = false end end
+			for _, sk in pairs(PlayerData.Skeletons) do for _, l in pairs(sk) do if l then l.Visible = false end end end
 			return
 		end
 
@@ -256,36 +265,36 @@ local function update()
 				end
 
 				if not shouldShow(player) then
-					if playerTracers[player] then playerTracers[player].Visible = false end
-					if playerInfoTexts[player] then playerInfoTexts[player].gui.Enabled = false end
-					if playerHitboxes[player] then playerHitboxes[player].Visible = false end
-					if playerHealthBars[player] then playerHealthBars[player].bg.Visible = false playerHealthBars[player].bar.Visible = false end
-					if playerHeadDots[player] then playerHeadDots[player].Visible = false end
-					if playerSkeletons[player] then for _, l in pairs(playerSkeletons[player]) do if l then l.Visible = false end end end
+					if PlayerData.Tracers[player] then PlayerData.Tracers[player].Visible = false end
+					if PlayerData.InfoTexts[player] then PlayerData.InfoTexts[player].gui.Enabled = false end
+					if PlayerData.Hitboxes[player] then PlayerData.Hitboxes[player].Visible = false end
+					if PlayerData.HealthBars[player] then PlayerData.HealthBars[player].bg.Visible = false PlayerData.HealthBars[player].bar.Visible = false end
+					if PlayerData.HeadDots[player] then PlayerData.HeadDots[player].Visible = false end
+					if PlayerData.Skeletons[player] then for _, l in pairs(PlayerData.Skeletons[player]) do if l then l.Visible = false end end end
 				else
-					if not playerTracers[player] then playerTracers[player] = Drawing.new("Line") end
-					if not playerInfoTexts[player] then
+					if not PlayerData.Tracers[player] then PlayerData.Tracers[player] = Drawing.new("Line") end
+					if not PlayerData.InfoTexts[player] then
 						local data = createBillboard(player, head or root)
 						if data then
 							data.gui.Parent = lpr:WaitForChild("PlayerGui")
-							playerInfoTexts[player] = data
+							PlayerData.InfoTexts[player] = data
 						end
 					end
-					if not playerHitboxes[player] then playerHitboxes[player] = createBox() end
-					if not playerHealthBars[player] then playerHealthBars[player] = createHealthBar() end
-					if not playerHeadDots[player] then playerHeadDots[player] = createDot() end
-					if not playerSkeletons[player] then playerSkeletons[player] = createSkeleton() end
+					if not PlayerData.Hitboxes[player] then PlayerData.Hitboxes[player] = createBox() end
+					if not PlayerData.HealthBars[player] then PlayerData.HealthBars[player] = createHealthBar() end
+					if not PlayerData.HeadDots[player] then PlayerData.HeadDots[player] = createDot() end
+					if not PlayerData.Skeletons[player] then PlayerData.Skeletons[player] = createSkeleton() end
 
-					local tracer = playerTracers[player]
-					local info = playerInfoTexts[player]
-					local box = playerHitboxes[player]
-					local hbar = playerHealthBars[player]
-					local dot = playerHeadDots[player]
-					local skel = playerSkeletons[player]
+					local tracer = PlayerData.Tracers[player]
+					local info = PlayerData.InfoTexts[player]
+					local box = PlayerData.Hitboxes[player]
+					local hbar = PlayerData.HealthBars[player]
+					local dot = PlayerData.HeadDots[player]
+					local skel = PlayerData.Skeletons[player]
 					local col = getColor(time, player.UserId)
 
 					if onScreen then
-						if tracersEnabled and tracer then
+						if Settings.TracersEnabled and tracer then
 							tracer.From = Vector2.new(camera.ViewportSize.X/2, camera.ViewportSize.Y)
 							tracer.To = Vector2.new(sp.X, sp.Y)
 							tracer.Color = col
@@ -298,14 +307,14 @@ local function update()
 						if headOn then
 							if info then
 								info.gui.Enabled = true
-								if namesEnabled then
+								if Settings.NamesEnabled then
 									info.name.Text = player.Name
 									info.name.TextColor3 = col
 									info.name.Visible = true
 								else
 									info.name.Visible = false
 								end
-								if showDistance then
+								if Settings.ShowDistance then
 									local d = (root.Position - lpr.Character.HumanoidRootPart.Position).Magnitude
 									info.dist.Text = string.format("%.1f studs", d)
 									info.dist.TextColor3 = col
@@ -313,7 +322,7 @@ local function update()
 								else
 									info.dist.Visible = false
 								end
-								if showHealth then
+								if Settings.ShowHealth then
 									local hum = player.Character:FindFirstChildOfClass("Humanoid")
 									if hum then
 										local pct = math.clamp(hum.Health / math.max(hum.MaxHealth, 1), 0, 1) * 100
@@ -328,7 +337,7 @@ local function update()
 								end
 							end
 
-							if boxesEnabled and box then
+							if Settings.BoxesEnabled and box then
 								local size = math.clamp((hp - sp).Magnitude * 2.1, 18, 120)
 								box.Size = Vector2.new(size, size * 2.15)
 								box.Position = Vector2.new(sp.X - size/2, sp.Y - size * 1.05)
@@ -338,7 +347,7 @@ local function update()
 								box.Visible = false
 							end
 
-							if healthBarEnabled and hbar then
+							if Settings.HealthBarEnabled and hbar then
 								local hum = player.Character:FindFirstChildOfClass("Humanoid")
 								if hum then
 									local pct = math.clamp(hum.Health / math.max(hum.MaxHealth, 1), 0, 1)
@@ -357,7 +366,7 @@ local function update()
 								hbar.bar.Visible = false
 							end
 
-							if headDotEnabled and dot then
+							if Settings.HeadDotEnabled and dot then
 								dot.Position = Vector2.new(hp.X, hp.Y)
 								dot.Color = col
 								dot.Visible = true
@@ -365,7 +374,7 @@ local function update()
 								dot.Visible = false
 							end
 
-							if skeletonEnabled and skel then
+							if Settings.SkeletonEnabled and skel then
 								local b = getBones(player.Character)
 								local function line(i, a, c)
 									if a and c and skel[i] then
@@ -412,7 +421,7 @@ local function update()
 						if skel then for _, l in pairs(skel) do if l then l.Visible = false end end end
 					end
 
-					if chamsEnabled then
+					if Settings.ChamsEnabled then
 						applyChams(player, true, col)
 					end
 				end
@@ -421,7 +430,7 @@ local function update()
 	end)
 end
 
-local ScreenGui = Instance.new("ScreenGui")
+ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "ESPRainbowDeluxe"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
@@ -478,7 +487,6 @@ VersionLabel.TextSize = 11
 VersionLabel.TextXAlignment = Enum.TextXAlignment.Left
 VersionLabel.Parent = TitleBar
 
-
 local CloseBtn = Instance.new("TextButton")
 CloseBtn.Size = UDim2.new(0, 32, 0, 32)
 CloseBtn.Position = UDim2.new(1, -40, 0.5, -16)
@@ -490,10 +498,8 @@ CloseBtn.TextSize = 16
 CloseBtn.Parent = TitleBar
 Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 8)
 
-connect(local unload
-
 connect(CloseBtn.MouseButton1Click, function()
-	if unload then unload() end
+	unload()
 end)
 
 local dragging, dragInput, dragStart, startPos
@@ -702,40 +708,40 @@ local function makeButton(parent, name, callback)
 end
 
 local left = makeSection("ESP CONTROLS")
-makeToggle(left, "ESP Enabled", true, function(v) espEnabled = v end)
-makeToggle(left, "Health Bar", true, function(v) healthBarEnabled = v end)
-makeToggle(left, "X-Ray", false, function(v) xrayEnabled = v applyXRay() end)
-makeToggle(left, "Tracers", true, function(v) tracersEnabled = v end)
-makeToggle(left, "Boxes", true, function(v) boxesEnabled = v end)
-makeToggle(left, "Names", true, function(v) namesEnabled = v end)
+makeToggle(left, "ESP Enabled", true, function(v) Settings.ESPEnabled = v end)
+makeToggle(left, "Health Bar", true, function(v) Settings.HealthBarEnabled = v end)
+makeToggle(left, "X-Ray", false, function(v) Settings.XRayEnabled = v applyXRay() end)
+makeToggle(left, "Tracers", true, function(v) Settings.TracersEnabled = v end)
+makeToggle(left, "Boxes", true, function(v) Settings.BoxesEnabled = v end)
+makeToggle(left, "Names", true, function(v) Settings.NamesEnabled = v end)
 
 local right = makeSection("TEAM & FILTER")
 local teamBtn
 teamBtn = makeButton(right, "Mode: " .. getTeamModeText(), function()
-	teamMode = (teamMode + 1) % 3
+	Settings.TeamMode = (Settings.TeamMode + 1) % 3
 	teamBtn.Text = "Mode: " .. getTeamModeText()
 end)
 makeToggle(right, "Enemies Only", false, function(v)
-	teamMode = v and 1 or 0
+	Settings.TeamMode = v and 1 or 0
 	teamBtn.Text = "Mode: " .. getTeamModeText()
 end)
 makeToggle(right, "Team Only", false, function(v)
-	teamMode = v and 2 or 0
+	Settings.TeamMode = v and 2 or 0
 	teamBtn.Text = "Mode: " .. getTeamModeText()
 end)
-makeToggle(right, "Show Distance", true, function(v) showDistance = v end)
-makeToggle(right, "Show Health", true, function(v) showHealth = v end)
-makeToggle(right, "Rainbow Mode", true, function(v) rainbowMode = v end)
+makeToggle(right, "Show Distance", true, function(v) Settings.ShowDistance = v end)
+makeToggle(right, "Show Health", true, function(v) Settings.ShowHealth = v end)
+makeToggle(right, "Rainbow Mode", true, function(v) Settings.RainbowMode = v end)
 
 local extra = makeSection("EXTRA OPTIONS")
 makeToggle(extra, "Chams", false, function(v)
-	chamsEnabled = v
+	Settings.ChamsEnabled = v
 	for _, p in pairs(Services.Players:GetPlayers()) do
 		if p ~= lpr then applyChams(p, v, getColor(tick(), p.UserId)) end
 	end
 end)
-makeToggle(extra, "Head Dot", false, function(v) headDotEnabled = v end)
-makeToggle(extra, "Skeleton", false, function(v) skeletonEnabled = v end)
+makeToggle(extra, "Head Dot", false, function(v) Settings.HeadDotEnabled = v end)
+makeToggle(extra, "Skeleton", false, function(v) Settings.SkeletonEnabled = v end)
 
 connect(Services.UserInputService.InputBegan, function(input, gp)
 	if gp then return end
@@ -746,21 +752,21 @@ end)
 
 local function cleanPlayer(player)
 	pcall(function()
-		if playerTracers[player] then playerTracers[player]:Remove() playerTracers[player] = nil end
-		if playerInfoTexts[player] then
-			playerInfoTexts[player].gui:Destroy()
-			playerInfoTexts[player] = nil
+		if PlayerData.Tracers[player] then PlayerData.Tracers[player]:Remove() PlayerData.Tracers[player] = nil end
+		if PlayerData.InfoTexts[player] then
+			PlayerData.InfoTexts[player].gui:Destroy()
+			PlayerData.InfoTexts[player] = nil
 		end
-		if playerHitboxes[player] then playerHitboxes[player]:Remove() playerHitboxes[player] = nil end
-		if playerHealthBars[player] then
-			playerHealthBars[player].bg:Remove()
-			playerHealthBars[player].bar:Remove()
-			playerHealthBars[player] = nil
+		if PlayerData.Hitboxes[player] then PlayerData.Hitboxes[player]:Remove() PlayerData.Hitboxes[player] = nil end
+		if PlayerData.HealthBars[player] then
+			PlayerData.HealthBars[player].bg:Remove()
+			PlayerData.HealthBars[player].bar:Remove()
+			PlayerData.HealthBars[player] = nil
 		end
-		if playerHeadDots[player] then playerHeadDots[player]:Remove() playerHeadDots[player] = nil end
-		if playerSkeletons[player] then
-			for _, l in pairs(playerSkeletons[player]) do if l then l:Remove() end end
-			playerSkeletons[player] = nil
+		if PlayerData.HeadDots[player] then PlayerData.HeadDots[player]:Remove() PlayerData.HeadDots[player] = nil end
+		if PlayerData.Skeletons[player] then
+			for _, l in pairs(PlayerData.Skeletons[player]) do if l then l:Remove() end end
+			PlayerData.Skeletons[player] = nil
 		end
 		applyChams(player, false)
 	end)
