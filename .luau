@@ -238,27 +238,11 @@ local function getBones(char)
 	}
 end
 
--- Variables globales pour le contrôle de l'UI (déclarées en amont pour le update)
-local ScreenGui
-local mainFrame
-
 local function update()
 	pcall(function()
 		camera = Services.Workspace.CurrentCamera or camera
 		if not camera then return end
 		worldToViewportPoint = camera.WorldToViewportPoint
-
-		-- Si le GUI est fermé/invisible, on désactive tout proprement à l'écran
-		if mainFrame and not mainFrame.Visible then
-			for _, v in pairs(PlayerData.Tracers) do if v then v.Visible = false end end
-			for _, v in pairs(PlayerData.InfoTexts) do if v and v.gui then v.gui.Enabled = false end end
-			for _, v in pairs(PlayerData.Hitboxes) do if v then v.Visible = false end end
-			for _, v in pairs(PlayerData.HealthBars) do if v then v.bg.Visible = false v.bar.Visible = false end end
-			for _, v in pairs(PlayerData.HeadDots) do if v then v.Visible = false end end
-			for _, sk in pairs(PlayerData.Skeletons) do for _, l in pairs(sk) do if l then l.Visible = false end end end
-			return
-		end
-
 		if not Settings.ESPEnabled or not lpr.Character or not lpr.Character:FindFirstChild("HumanoidRootPart") then
 			for _, v in pairs(PlayerData.Tracers) do if v then v.Visible = false end end
 			for _, v in pairs(PlayerData.InfoTexts) do if v and v.gui then v.gui.Enabled = false end end
@@ -452,7 +436,7 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.Parent = lpr:WaitForChild("PlayerGui")
 
-mainFrame = Instance.new("Frame")
+local mainFrame = Instance.new("Frame")
 mainFrame.Name = "Main"
 mainFrame.Size = UDim2.new(0, 520, 0, 480)
 mainFrame.Position = UDim2.new(0.5, -260, 0.5, -240)
@@ -484,22 +468,22 @@ TitleFix.BackgroundColor3 = Color3.fromRGB(22, 0, 0)
 TitleFix.BorderSizePixel = 0
 TitleFix.Parent = TitleBar
 
--- Version à gauche (agrandie et en rouge vif)
+-- Version à gauche (style d'origine)
 local VersionLabel = Instance.new("TextLabel")
-VersionLabel.Size = UDim2.new(0, 85, 1, 0)
-VersionLabel.Position = UDim2.new(0, 14, 0, 0)
+VersionLabel.Size = UDim2.new(0, 72, 0, 20)
+VersionLabel.Position = UDim2.new(0, 16, 0.5, -10)
 VersionLabel.BackgroundTransparency = 1
 VersionLabel.Text = "Version 1.2"
-VersionLabel.TextColor3 = Color3.fromRGB(255, 60, 60)
-VersionLabel.Font = Enum.Font.GothamBold
-VersionLabel.TextSize = 13
+VersionLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
+VersionLabel.Font = Enum.Font.Gotham
+VersionLabel.TextSize = 11
 VersionLabel.TextXAlignment = Enum.TextXAlignment.Left
 VersionLabel.Parent = TitleBar
 
--- Titre à droite de la version
+-- Titre à droite de la version (style d'origine)
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, -160, 1, 0)
-Title.Position = UDim2.new(0, 100, 0, 0)
+Title.Size = UDim2.new(1, -150, 1, 0)
+Title.Position = UDim2.new(0, 95, 0, 0)
 Title.BackgroundTransparency = 1
 Title.Text = "ESP RAINBOW DELUXE"
 Title.TextColor3 = Color3.fromRGB(255, 45, 45)
