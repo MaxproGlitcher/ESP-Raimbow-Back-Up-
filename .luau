@@ -1,4 +1,15 @@
-Services = setmetatable({}, {
+if type(_G.ESP_RAINBOW_DELUXE_UNLOAD) == "function" then
+	pcall(_G.ESP_RAINBOW_DELUXE_UNLOAD)
+end
+
+local Connections = {}
+local function connect(signal, callback)
+	local connection = signal:Connect(callback)
+	table.insert(Connections, connection)
+	return connection
+end
+
+local Services = setmetatable({}, {
 	__index = function(self, name)
 		local success, service = pcall(function()
 			return game:GetService(name)
@@ -11,36 +22,39 @@ Services = setmetatable({}, {
 	end
 })
 
-local Players = Services.Players
-local Workspace = Services.Workspace
-local RunService = Services.RunService
-local UserInputService = Services.UserInputService
-local TweenService = Services.TweenService
 
-local lpr = Players.LocalPlayer
-local camera = Workspace.CurrentCamera
+local lpr = Services.Players.LocalPlayer
+local camera = Services.Workspace.CurrentCamera
 local worldToViewportPoint = camera.WorldToViewportPoint
 
-local teamMode = 0
-local espEnabled = true
-local healthBarEnabled = true
-local xrayEnabled = false
-local tracersEnabled = true
-local boxesEnabled = true
-local namesEnabled = true
-local showDistance = true
-local showHealth = true
-local rainbowMode = true
-local chamsEnabled = false
-local headDotEnabled = false
-local skeletonEnabled = false
+local Settings = {
+    TeamMode = 0,
+    ESPEnabled = true,
+    HealthBarEnabled = true,
+    XRayEnabled = false,
+    TracersEnabled = true,
+    BoxesEnabled = true,
+    NamesEnabled = true,
+    ShowDistance = true,
+    ShowHealth = true,
+    RainbowMode = true,
+    ChamsEnabled = false,
+    HeadDotEnabled = false,
+    SkeletonEnabled = false
+}
 
-local playerTracers = {}
-local playerInfoTexts = {}
-local playerHitboxes = {}
-local playerHealthBars = {}
-local playerHeadDots = {}
-local playerSkeletons = {}
+local PlayerData = {
+    Tracers = {},
+    InfoTexts = {},
+    Hitboxes = {},
+    HealthBars = {},
+    HeadDots = {},
+    Skeletons = {}
+}
+
+lpr = Services.Players.LocalPlayer
+camera = Services.Workspace.CurrentCamera
+worldToViewportPoint = camera.WorldToViewportPoint
 
 local function rainbowColor(t)
 	local r = math.floor(math.sin(t + 0) * 127 + 128)
@@ -57,14 +71,14 @@ local function getColor(t, id)
 end
 
 local function getTeamModeText()
-	if teamMode == 1 then return "Ennemis"
-	elseif teamMode == 2 then return "Équipe"
-	else return "Tout" end
+	if teamMode == 1 then return "Enemies"
+	elseif teamMode == 2 then return "Team"
+	else return "All" end
 end
 
 local function applyXRay()
 	pcall(function()
-		for _, v in pairs(Workspace:GetDescendants()) do
+		for _, v in pairs(Services.Workspace:GetDescendants()) do
 			if v:IsA("BasePart") then
 				local char = v.Parent
 				if not (char and char:FindFirstChildWhichIsA("Humanoid")) and not (char and char.Parent and char.Parent:FindFirstChildWhichIsA("Humanoid")) then
@@ -217,7 +231,7 @@ end
 
 local function update()
 	pcall(function()
-		camera = Workspace.CurrentCamera or camera
+		camera = Services.Workspace.CurrentCamera or camera
 		if not camera then return end
 		worldToViewportPoint = camera.WorldToViewportPoint
 		if not espEnabled or not lpr.Character or not lpr.Character:FindFirstChild("HumanoidRootPart") then
@@ -231,7 +245,7 @@ local function update()
 		end
 
 		local time = tick()
-		for _, player in pairs(Players:GetPlayers()) do
+		for _, player in pairs(Services.Players:GetPlayers()) do
 			if player ~= lpr and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
 				local root = player.Character.HumanoidRootPart
 				local head = player.Character:FindFirstChild("Head")
@@ -303,7 +317,7 @@ local function update()
 									local hum = player.Character:FindFirstChildOfClass("Humanoid")
 									if hum then
 										local pct = math.clamp(hum.Health / math.max(hum.MaxHealth, 1), 0, 1) * 100
-										info.hp.Text = string.format("Vie: %.0f%%  |  %.0f/%.0f HP", pct, hum.Health, hum.MaxHealth)
+										info.hp.Text = string.format("Health: %.0f%%  |  %.0f/%.0f HP", pct, hum.Health, hum.MaxHealth)
 										info.hp.TextColor3 = col
 										info.hp.Visible = true
 									else
@@ -443,7 +457,7 @@ TitleFix.BorderSizePixel = 0
 TitleFix.Parent = TitleBar
 
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, -90, 1, 0)
+Title.Size = UDim2.new(1, -150, 1, 0)
 Title.Position = UDim2.new(0, 16, 0, 0)
 Title.BackgroundTransparency = 1
 Title.Text = "ESP RAINBOW DELUXE"
@@ -453,15 +467,17 @@ Title.TextSize = 18
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = TitleBar
 
-local StatusLabel = Instance.new("TextLabel")
-StatusLabel.Size = UDim2.new(0, 45, 0, 20)
-StatusLabel.Position = UDim2.new(1, -85, 0.5, -10)
-StatusLabel.BackgroundTransparency = 1
-StatusLabel.Text = "WAVE"
-StatusLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
-StatusLabel.Font = Enum.Font.GothamBold
-StatusLabel.TextSize = 12
-StatusLabel.Parent = TitleBar
+local VersionLabel = Instance.new("TextLabel")
+VersionLabel.Size = UDim2.new(0, 72, 0, 20)
+VersionLabel.Position = UDim2.new(0, 238, 0.5, -10)
+VersionLabel.BackgroundTransparency = 1
+VersionLabel.Text = "Version 1.2"
+VersionLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
+VersionLabel.Font = Enum.Font.Gotham
+VersionLabel.TextSize = 11
+VersionLabel.TextXAlignment = Enum.TextXAlignment.Left
+VersionLabel.Parent = TitleBar
+
 
 local CloseBtn = Instance.new("TextButton")
 CloseBtn.Size = UDim2.new(0, 32, 0, 32)
@@ -474,8 +490,10 @@ CloseBtn.TextSize = 16
 CloseBtn.Parent = TitleBar
 Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 8)
 
-CloseBtn.MouseButton1Click:Connect(function()
-	mainFrame.Visible = not mainFrame.Visible
+connect(local unload
+
+connect(CloseBtn.MouseButton1Click, function()
+	if unload then unload() end
 end)
 
 local dragging, dragInput, dragStart, startPos
@@ -483,28 +501,28 @@ local function updateDrag(input)
 	pcall(function()
 		local delta = input.Position - dragStart
 		local pos = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-		TweenService:Create(mainFrame, TweenInfo.new(0.12), {Position = pos}):Play()
+		Services.TweenService:Create(mainFrame, TweenInfo.new(0.12), {Position = pos}):Play()
 	end)
 end
 
-mainFrame.InputBegan:Connect(function(input)
+connect(mainFrame.InputBegan, function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 		dragging = true
 		dragStart = input.Position
 		startPos = mainFrame.Position
-		input.Changed:Connect(function()
+		connect(input.Changed, function()
 			if input.UserInputState == Enum.UserInputState.End then dragging = false end
 		end)
 	end
 end)
 
-mainFrame.InputChanged:Connect(function(input)
+connect(mainFrame.InputChanged, function(input)
 	if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
 		dragInput = input
 	end
 end)
 
-UserInputService.InputChanged:Connect(function(input)
+connect(Services.UserInputService.InputChanged, function(input)
 	if dragging and input == dragInput then updateDrag(input) end
 end)
 
@@ -538,13 +556,13 @@ contentPadding.PaddingRight = UDim.new(0, 6)
 contentPadding.Parent = content
 
 local isScrolling = false
-scrollFrame.InputBegan:Connect(function(input)
+connect(scrollFrame.InputBegan, function(input)
 	if input.UserInputType == Enum.UserInputType.MouseWheel or input.UserInputType == Enum.UserInputType.Touch then
 		isScrolling = true
 		mainFrame.Active = false
 	end
 end)
-scrollFrame.InputEnded:Connect(function(input)
+connect(scrollFrame.InputEnded, function(input)
 	if input.UserInputType == Enum.UserInputType.MouseWheel or input.UserInputType == Enum.UserInputType.Touch then
 		task.delay(0.1, function()
 			isScrolling = false
@@ -595,7 +613,7 @@ local function makeSection(title)
 	local function updateGridSize()
 		row.Size = UDim2.new(1, -12, 0, grid.AbsoluteContentSize.Y)
 	end
-	grid:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateGridSize)
+	connect(grid:GetPropertyChangedSignal("AbsoluteContentSize"), updateGridSize)
 	updateGridSize()
 
 	local pad = Instance.new("UIPadding")
@@ -641,12 +659,12 @@ local function makeToggle(parent, name, default, callback)
 	Instance.new("UICorner", circle).CornerRadius = UDim.new(1, 0)
 
 	local state = default
-	toggle.MouseButton1Click:Connect(function()
+	connect(toggle.MouseButton1Click, function()
 		state = not state
 		local goalPos = state and UDim2.new(1, -19, 0.5, -8) or UDim2.new(0, 3, 0.5, -8)
 		local goalColor = state and Color3.fromRGB(160, 0, 0) or Color3.fromRGB(45, 45, 45)
-		TweenService:Create(circle, TweenInfo.new(0.15), {Position = goalPos}):Play()
-		TweenService:Create(toggle, TweenInfo.new(0.15), {BackgroundColor3 = goalColor}):Play()
+		Services.TweenService:Create(circle, TweenInfo.new(0.15), {Position = goalPos}):Play()
+		Services.TweenService:Create(toggle, TweenInfo.new(0.15), {BackgroundColor3 = goalColor}):Play()
 		local ok, err = xpcall(function()
 			callback(state)
 		end, debug.traceback)
@@ -668,17 +686,17 @@ local function makeButton(parent, name, callback)
 	s.Color = Color3.fromRGB(120, 0, 0)
 	s.Thickness = 1
 
-	btn.MouseButton1Click:Connect(function()
+	connect(btn.MouseButton1Click, function()
 		local ok, err = xpcall(function()
 			callback()
 		end, debug.traceback)
 		if not ok then warn("[ESP Rainbow Deluxe] Button error: " .. tostring(err)) end
 	end)
-	btn.MouseEnter:Connect(function()
-		TweenService:Create(btn, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(60, 0, 0)}):Play()
+	connect(btn.MouseEnter, function()
+		Services.TweenService:Create(btn, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(60, 0, 0)}):Play()
 	end)
-	btn.MouseLeave:Connect(function()
-		TweenService:Create(btn, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(40, 0, 0)}):Play()
+	connect(btn.MouseLeave, function()
+		Services.TweenService:Create(btn, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(40, 0, 0)}):Play()
 	end)
 	return btn
 end
@@ -697,7 +715,7 @@ teamBtn = makeButton(right, "Mode: " .. getTeamModeText(), function()
 	teamMode = (teamMode + 1) % 3
 	teamBtn.Text = "Mode: " .. getTeamModeText()
 end)
-makeToggle(right, "Ennemis Only", false, function(v)
+makeToggle(right, "Enemies Only", false, function(v)
 	teamMode = v and 1 or 0
 	teamBtn.Text = "Mode: " .. getTeamModeText()
 end)
@@ -712,14 +730,14 @@ makeToggle(right, "Rainbow Mode", true, function(v) rainbowMode = v end)
 local extra = makeSection("EXTRA OPTIONS")
 makeToggle(extra, "Chams", false, function(v)
 	chamsEnabled = v
-	for _, p in pairs(Players:GetPlayers()) do
+	for _, p in pairs(Services.Players:GetPlayers()) do
 		if p ~= lpr then applyChams(p, v, getColor(tick(), p.UserId)) end
 	end
 end)
 makeToggle(extra, "Head Dot", false, function(v) headDotEnabled = v end)
 makeToggle(extra, "Skeleton", false, function(v) skeletonEnabled = v end)
 
-UserInputService.InputBegan:Connect(function(input, gp)
+connect(Services.UserInputService.InputBegan, function(input, gp)
 	if gp then return end
 	if input.KeyCode == Enum.KeyCode.RightShift then
 		mainFrame.Visible = not mainFrame.Visible
@@ -749,17 +767,17 @@ local function cleanPlayer(player)
 end
 
 local function onPlayerAdded(player)
-	player.CharacterAdded:Connect(function()
+	connect(player.CharacterAdded, function()
 		task.wait(1)
 		cleanPlayer(player)
 	end)
 end
 
-Players.PlayerAdded:Connect(onPlayerAdded)
-Players.PlayerRemoving:Connect(cleanPlayer)
+connect(Services.Players.PlayerAdded, onPlayerAdded)
+connect(Services.Players.PlayerRemoving, cleanPlayer)
 
-for _, player in pairs(Players:GetPlayers()) do
+for _, player in pairs(Services.Players:GetPlayers()) do
 	onPlayerAdded(player)
 end
 
-RunService.RenderStepped:Connect(update)
+connect(Services.RunService.RenderStepped, update)
