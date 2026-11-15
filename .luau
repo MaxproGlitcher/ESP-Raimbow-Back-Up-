@@ -1,5 +1,11 @@
-if type(_G.ESP_RAINBOW_DELUXE_UNLOAD) == "function" then
-	pcall(_G.ESP_RAINBOW_DELUXE_UNLOAD)
+local oldUnload = _G.ESP_RAINBOW_DELUXE_UNLOAD
+_G.ESP_RAINBOW_DELUXE_UNLOAD = nil
+if type(oldUnload) == "function" then
+	if type(pcall) == "function" then
+		pcall(oldUnload)
+	else
+		task.spawn(oldUnload)
+	end
 end
 
 local Connections = {}
@@ -9,16 +15,19 @@ local function connect(signal, callback)
 	return connection
 end
 
+local ScreenGui
+
 local function unload()
 	for _, connection in ipairs(Connections) do
-		if connection.Connected then
+		if connection and connection.Connected then
 			connection:Disconnect()
 		end
 	end
 	table.clear(Connections)
-	
+
 	if ScreenGui then
 		ScreenGui:Destroy()
+		ScreenGui = nil
 	end
 end
 _G.ESP_RAINBOW_DELUXE_UNLOAD = unload
