@@ -468,7 +468,7 @@ TitleFix.BackgroundColor3 = Color3.fromRGB(22, 0, 0)
 TitleFix.BorderSizePixel = 0
 TitleFix.Parent = TitleBar
 
--- Version à gauche (style d'origine)
+
 local VersionLabel = Instance.new("TextLabel")
 VersionLabel.Size = UDim2.new(0, 72, 0, 20)
 VersionLabel.Position = UDim2.new(0, 16, 0.5, -10)
@@ -537,7 +537,7 @@ connect(Services.UserInputService.InputChanged, function(input)
 	if dragging and input == dragInput then updateDrag(input) end
 end)
 
--- Coin de redimensionnement dynamique (Resizing)
+
 local resizeBtn = Instance.new("TextButton")
 resizeBtn.Size = UDim2.new(0, 20, 0, 20)
 resizeBtn.Position = UDim2.new(1, -18, 1, -18)
