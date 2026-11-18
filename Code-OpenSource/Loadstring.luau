@@ -16,7 +16,6 @@ local function unload()
 		end
 	end
 	table.clear(Connections)
-	
 	if ScreenGui then
 		ScreenGui:Destroy()
 	end
@@ -438,8 +437,8 @@ ScreenGui.Parent = lpr:WaitForChild("PlayerGui")
 
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "Main"
-mainFrame.Size = UDim2.new(0, 520, 0, 480)
-mainFrame.Position = UDim2.new(0.5, -260, 0.5, -240)
+mainFrame.Size = UDim2.new(0, 520, 0, 510)
+mainFrame.Position = UDim2.new(0.5, -260, 0.5, -255)
 mainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 mainFrame.BorderSizePixel = 0
 mainFrame.Active = true
@@ -455,7 +454,7 @@ stroke.Thickness = 2.5
 stroke.Transparency = 0.25
 
 local TitleBar = Instance.new("Frame")
-TitleBar.Size = UDim2.new(1, 0, 0, 46)
+TitleBar.Size = UDim2.new(1, 0, 0, 68)
 TitleBar.BackgroundColor3 = Color3.fromRGB(22, 0, 0)
 TitleBar.BorderSizePixel = 0
 TitleBar.Parent = mainFrame
@@ -468,33 +467,42 @@ TitleFix.BackgroundColor3 = Color3.fromRGB(22, 0, 0)
 TitleFix.BorderSizePixel = 0
 TitleFix.Parent = TitleBar
 
-
 local VersionLabel = Instance.new("TextLabel")
-VersionLabel.Size = UDim2.new(0, 72, 0, 20)
-VersionLabel.Position = UDim2.new(0, 16, 0.5, -10)
+VersionLabel.Size = UDim2.new(0, 90, 0, 16)
+VersionLabel.Position = UDim2.new(0, 16, 0, 6)
 VersionLabel.BackgroundTransparency = 1
 VersionLabel.Text = "Version 1.2"
-VersionLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
-VersionLabel.Font = Enum.Font.Gotham
-VersionLabel.TextSize = 11
+VersionLabel.TextColor3 = Color3.fromRGB(255, 50, 50)
+VersionLabel.Font = Enum.Font.GothamBold
+VersionLabel.TextSize = 12
 VersionLabel.TextXAlignment = Enum.TextXAlignment.Left
 VersionLabel.Parent = TitleBar
 
--- Titre à droite de la version (style d'origine)
+local CreditLabel = Instance.new("TextLabel")
+CreditLabel.Size = UDim2.new(1, -60, 0, 16)
+CreditLabel.Position = UDim2.new(0, 16, 0, 24)
+CreditLabel.BackgroundTransparency = 1
+CreditLabel.Text = "By MaxproGlitcher  •  Discord : maxproglitcher"
+CreditLabel.TextColor3 = Color3.fromRGB(255, 55, 55)
+CreditLabel.Font = Enum.Font.Gotham
+CreditLabel.TextSize = 12
+CreditLabel.TextXAlignment = Enum.TextXAlignment.Left
+CreditLabel.Parent = TitleBar
+
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, -150, 1, 0)
-Title.Position = UDim2.new(0, 95, 0, 0)
+Title.Size = UDim2.new(1, -50, 0, 22)
+Title.Position = UDim2.new(0, 16, 0, 42)
 Title.BackgroundTransparency = 1
 Title.Text = "ESP RAINBOW DELUXE"
 Title.TextColor3 = Color3.fromRGB(255, 45, 45)
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 18
+Title.TextSize = 17
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = TitleBar
 
 local CloseBtn = Instance.new("TextButton")
 CloseBtn.Size = UDim2.new(0, 32, 0, 32)
-CloseBtn.Position = UDim2.new(1, -40, 0.5, -16)
+CloseBtn.Position = UDim2.new(1, -40, 0, 10)
 CloseBtn.BackgroundColor3 = Color3.fromRGB(45, 0, 0)
 CloseBtn.Text = "X"
 CloseBtn.TextColor3 = Color3.fromRGB(255, 80, 80)
@@ -537,7 +545,6 @@ connect(Services.UserInputService.InputChanged, function(input)
 	if dragging and input == dragInput then updateDrag(input) end
 end)
 
-
 local resizeBtn = Instance.new("TextButton")
 resizeBtn.Size = UDim2.new(0, 20, 0, 20)
 resizeBtn.Position = UDim2.new(1, -18, 1, -18)
@@ -572,8 +579,8 @@ connect(Services.UserInputService.InputChanged, function(input)
 end)
 
 local scrollFrame = Instance.new("ScrollingFrame")
-scrollFrame.Size = UDim2.new(1, -12, 1, -56)
-scrollFrame.Position = UDim2.new(0, 6, 0, 50)
+scrollFrame.Size = UDim2.new(1, -12, 1, -78)
+scrollFrame.Position = UDim2.new(0, 6, 0, 72)
 scrollFrame.BackgroundTransparency = 1
 scrollFrame.BorderSizePixel = 0
 scrollFrame.ScrollBarThickness = 5
