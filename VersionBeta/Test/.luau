@@ -52,9 +52,7 @@ local Settings = {
 	RainbowMode = true,
 	ChamsEnabled = false,
 	HeadDotEnabled = false,
-	SkeletonEnabled = false,
-	GunESPEnabled = false,
-	MyGunESPEnabled = false
+	SkeletonEnabled = false
 }
 
 local PlayerData = {
@@ -63,9 +61,7 @@ local PlayerData = {
 	Hitboxes = {},
 	HealthBars = {},
 	HeadDots = {},
-	Skeletons = {},
-	GunBoxes = {},
-	MyGunBox = nil
+	Skeletons = {}
 }
 
 local function rainbowColor(t)
@@ -79,7 +75,7 @@ local function getColor(t, id)
 	if Settings.RainbowMode then
 		return rainbowColor(t + (id or 0) * 0.1)
 	end
-	return Color3.fromRGB(180, 180, 180)
+	return Color3.fromRGB(255, 40, 40)
 end
 
 local function getTeamModeText()
@@ -115,7 +111,7 @@ local function createBillboard(player, adornee)
 		name.BackgroundTransparency = 1
 		name.TextStrokeTransparency = 0.3
 		name.TextSize = 15
-		name.TextColor3 = Color3.fromRGB(220, 220, 220)
+		name.TextColor3 = Color3.fromRGB(255, 255, 255)
 		name.Font = Enum.Font.GothamBold
 		name.Text = player.Name
 		name.Parent = gui
@@ -126,7 +122,7 @@ local function createBillboard(player, adornee)
 		dist.BackgroundTransparency = 1
 		dist.TextStrokeTransparency = 0.3
 		dist.TextSize = 13
-		dist.TextColor3 = Color3.fromRGB(200, 200, 200)
+		dist.TextColor3 = Color3.fromRGB(255, 255, 255)
 		dist.Font = Enum.Font.Gotham
 		dist.Parent = gui
 
@@ -136,7 +132,7 @@ local function createBillboard(player, adornee)
 		hp.BackgroundTransparency = 1
 		hp.TextStrokeTransparency = 0.3
 		hp.TextSize = 13
-		hp.TextColor3 = Color3.fromRGB(200, 200, 200)
+		hp.TextColor3 = Color3.fromRGB(255, 255, 255)
 		hp.Font = Enum.Font.Gotham
 		hp.Parent = gui
 
@@ -151,7 +147,7 @@ local function createHealthBar()
 		local bar = Drawing.new("Square")
 		bg.Filled = true
 		bg.Thickness = 1
-		bg.Color = Color3.fromRGB(20, 20, 20)
+		bg.Color = Color3.fromRGB(15, 0, 0)
 		bg.Transparency = 0.35
 		bar.Filled = true
 		bar.Thickness = 1
@@ -205,7 +201,7 @@ local function applyChams(player, on, col)
 			if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
 				if on then
 					part.Material = Enum.Material.ForceField
-					part.Color = col or Color3.fromRGB(180, 180, 180)
+					part.Color = col or Color3.fromRGB(255, 40, 40)
 				else
 					part.Material = Enum.Material.Plastic
 				end
@@ -241,16 +237,6 @@ local function getBones(char)
 	}
 end
 
-local function getEquippedTool(character)
-	if not character then return nil end
-	for _, child in pairs(character:GetChildren()) do
-		if child:IsA("Tool") then
-			return child
-		end
-	end
-	return nil
-end
-
 local function update()
 	pcall(function()
 		camera = Services.Workspace.CurrentCamera or camera
@@ -263,8 +249,6 @@ local function update()
 			for _, v in pairs(PlayerData.HealthBars) do if v then v.bg.Visible = false v.bar.Visible = false end end
 			for _, v in pairs(PlayerData.HeadDots) do if v then v.Visible = false end end
 			for _, sk in pairs(PlayerData.Skeletons) do for _, l in pairs(sk) do if l then l.Visible = false end end end
-			for _, v in pairs(PlayerData.GunBoxes) do if v then v.Visible = false end end
-			if PlayerData.MyGunBox then PlayerData.MyGunBox.Visible = false end
 			return
 		end
 
@@ -286,7 +270,6 @@ local function update()
 					if PlayerData.HealthBars[player] then PlayerData.HealthBars[player].bg.Visible = false PlayerData.HealthBars[player].bar.Visible = false end
 					if PlayerData.HeadDots[player] then PlayerData.HeadDots[player].Visible = false end
 					if PlayerData.Skeletons[player] then for _, l in pairs(PlayerData.Skeletons[player]) do if l then l.Visible = false end end end
-					if PlayerData.GunBoxes[player] then PlayerData.GunBoxes[player].Visible = false end
 				else
 					if not PlayerData.Tracers[player] then PlayerData.Tracers[player] = Drawing.new("Line") end
 					if not PlayerData.InfoTexts[player] then
@@ -300,7 +283,6 @@ local function update()
 					if not PlayerData.HealthBars[player] then PlayerData.HealthBars[player] = createHealthBar() end
 					if not PlayerData.HeadDots[player] then PlayerData.HeadDots[player] = createDot() end
 					if not PlayerData.Skeletons[player] then PlayerData.Skeletons[player] = createSkeleton() end
-					if not PlayerData.GunBoxes[player] then PlayerData.GunBoxes[player] = createBox() end
 
 					local tracer = PlayerData.Tracers[player]
 					local info = PlayerData.InfoTexts[player]
@@ -308,7 +290,6 @@ local function update()
 					local hbar = PlayerData.HealthBars[player]
 					local dot = PlayerData.HeadDots[player]
 					local skel = PlayerData.Skeletons[player]
-					local gunBox = PlayerData.GunBoxes[player]
 					local col = getColor(time, player.UserId)
 
 					if onScreen then
@@ -430,31 +411,6 @@ local function update()
 							if dot then dot.Visible = false end
 							if skel then for _, l in pairs(skel) do if l then l.Visible = false end end end
 						end
-
-						if Settings.GunESPEnabled and gunBox then
-							local tool = getEquippedTool(player.Character)
-							if tool then
-								local handle = tool:FindFirstChild("Handle") or tool:FindFirstChildWhichIsA("BasePart")
-								if handle then
-									local tp, ton = worldToViewportPoint(camera, handle.Position)
-									if ton then
-										local size = 18
-										gunBox.Size = Vector2.new(size, size * 1.4)
-										gunBox.Position = Vector2.new(tp.X - size/2, tp.Y - size * 0.7)
-										gunBox.Color = col
-										gunBox.Visible = true
-									else
-										gunBox.Visible = false
-									end
-								else
-									gunBox.Visible = false
-								end
-							else
-								gunBox.Visible = false
-							end
-						elseif gunBox then
-							gunBox.Visible = false
-						end
 					else
 						if tracer then tracer.Visible = false end
 						if info then info.gui.Enabled = false end
@@ -462,7 +418,6 @@ local function update()
 						if hbar then hbar.bg.Visible = false hbar.bar.Visible = false end
 						if dot then dot.Visible = false end
 						if skel then for _, l in pairs(skel) do if l then l.Visible = false end end end
-						if gunBox then gunBox.Visible = false end
 					end
 
 					if Settings.ChamsEnabled then
@@ -470,32 +425,6 @@ local function update()
 					end
 				end
 			end
-		end
-
-		if Settings.MyGunESPEnabled then
-			if not PlayerData.MyGunBox then PlayerData.MyGunBox = createBox() end
-			local myTool = getEquippedTool(lpr.Character)
-			if myTool and PlayerData.MyGunBox then
-				local handle = myTool:FindFirstChild("Handle") or myTool:FindFirstChildWhichIsA("BasePart")
-				if handle then
-					local tp, ton = worldToViewportPoint(camera, handle.Position)
-					if ton then
-						local size = 20
-						PlayerData.MyGunBox.Size = Vector2.new(size, size * 1.5)
-						PlayerData.MyGunBox.Position = Vector2.new(tp.X - size/2, tp.Y - size * 0.75)
-						PlayerData.MyGunBox.Color = getColor(time, lpr.UserId)
-						PlayerData.MyGunBox.Visible = true
-					else
-						PlayerData.MyGunBox.Visible = false
-					end
-				else
-					PlayerData.MyGunBox.Visible = false
-				end
-			elseif PlayerData.MyGunBox then
-				PlayerData.MyGunBox.Visible = false
-			end
-		elseif PlayerData.MyGunBox then
-			PlayerData.MyGunBox.Visible = false
 		end
 	end)
 end
@@ -508,9 +437,9 @@ ScreenGui.Parent = lpr:WaitForChild("PlayerGui")
 
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "Main"
-mainFrame.Size = UDim2.new(0, 520, 0, 520)
-mainFrame.Position = UDim2.new(0.5, -260, 0.5, -260)
-mainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+mainFrame.Size = UDim2.new(0, 520, 0, 510)
+mainFrame.Position = UDim2.new(0.5, -260, 0.5, -255)
+mainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 mainFrame.BorderSizePixel = 0
 mainFrame.Active = true
 mainFrame.Parent = ScreenGui
@@ -520,13 +449,13 @@ local uiScale = Instance.new("UIScale")
 uiScale.Parent = mainFrame
 
 local stroke = Instance.new("UIStroke", mainFrame)
-stroke.Color = Color3.fromRGB(55, 55, 55)
-stroke.Thickness = 2
-stroke.Transparency = 0.15
+stroke.Color = Color3.fromRGB(180, 0, 0)
+stroke.Thickness = 2.5
+stroke.Transparency = 0.25
 
 local TitleBar = Instance.new("Frame")
-TitleBar.Size = UDim2.new(1, 0, 0, 62)
-TitleBar.BackgroundColor3 = Color3.fromRGB(28, 28, 28)
+TitleBar.Size = UDim2.new(1, 0, 0, 68)
+TitleBar.BackgroundColor3 = Color3.fromRGB(22, 0, 0)
 TitleBar.BorderSizePixel = 0
 TitleBar.Parent = mainFrame
 Instance.new("UICorner", TitleBar).CornerRadius = UDim.new(0, 12)
@@ -534,12 +463,12 @@ Instance.new("UICorner", TitleBar).CornerRadius = UDim.new(0, 12)
 local TitleFix = Instance.new("Frame")
 TitleFix.Size = UDim2.new(1, 0, 0, 16)
 TitleFix.Position = UDim2.new(0, 0, 1, -16)
-TitleFix.BackgroundColor3 = Color3.fromRGB(28, 28, 28)
+TitleFix.BackgroundColor3 = Color3.fromRGB(22, 0, 0)
 TitleFix.BorderSizePixel = 0
 TitleFix.Parent = TitleBar
 
 local VersionLabel = Instance.new("TextLabel")
-VersionLabel.Size = UDim2.new(0, 80, 0, 18)
+VersionLabel.Size = UDim2.new(0, 90, 0, 16)
 VersionLabel.Position = UDim2.new(0, 16, 0, 6)
 VersionLabel.BackgroundTransparency = 1
 VersionLabel.Text = "Version 1.2"
@@ -550,33 +479,33 @@ VersionLabel.TextXAlignment = Enum.TextXAlignment.Left
 VersionLabel.Parent = TitleBar
 
 local CreditLabel = Instance.new("TextLabel")
-CreditLabel.Size = UDim2.new(1, -100, 0, 16)
+CreditLabel.Size = UDim2.new(1, -60, 0, 16)
 CreditLabel.Position = UDim2.new(0, 16, 0, 24)
 CreditLabel.BackgroundTransparency = 1
-CreditLabel.Text = "By MaxproGlitcher  |  Discord : maxproglitcher"
-CreditLabel.TextColor3 = Color3.fromRGB(255, 50, 50)
+CreditLabel.Text = "By MaxproGlitcher  •  Discord : maxproglitcher"
+CreditLabel.TextColor3 = Color3.fromRGB(255, 55, 55)
 CreditLabel.Font = Enum.Font.Gotham
-CreditLabel.TextSize = 11
+CreditLabel.TextSize = 12
 CreditLabel.TextXAlignment = Enum.TextXAlignment.Left
 CreditLabel.Parent = TitleBar
 
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, -50, 0, 20)
-Title.Position = UDim2.new(0, 16, 0, 40)
+Title.Size = UDim2.new(1, -50, 0, 22)
+Title.Position = UDim2.new(0, 16, 0, 42)
 Title.BackgroundTransparency = 1
 Title.Text = "ESP RAINBOW DELUXE"
-Title.TextColor3 = Color3.fromRGB(220, 220, 220)
+Title.TextColor3 = Color3.fromRGB(255, 45, 45)
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 16
+Title.TextSize = 17
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = TitleBar
 
 local CloseBtn = Instance.new("TextButton")
 CloseBtn.Size = UDim2.new(0, 32, 0, 32)
-CloseBtn.Position = UDim2.new(1, -40, 0, 8)
-CloseBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+CloseBtn.Position = UDim2.new(1, -40, 0, 10)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(45, 0, 0)
 CloseBtn.Text = "X"
-CloseBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+CloseBtn.TextColor3 = Color3.fromRGB(255, 80, 80)
 CloseBtn.Font = Enum.Font.GothamBold
 CloseBtn.TextSize = 16
 CloseBtn.Parent = TitleBar
@@ -621,7 +550,7 @@ resizeBtn.Size = UDim2.new(0, 20, 0, 20)
 resizeBtn.Position = UDim2.new(1, -18, 1, -18)
 resizeBtn.BackgroundTransparency = 1
 resizeBtn.Text = "◢"
-resizeBtn.TextColor3 = Color3.fromRGB(120, 120, 120)
+resizeBtn.TextColor3 = Color3.fromRGB(180, 0, 0)
 resizeBtn.TextSize = 14
 resizeBtn.ZIndex = 10
 resizeBtn.Parent = mainFrame
@@ -650,12 +579,12 @@ connect(Services.UserInputService.InputChanged, function(input)
 end)
 
 local scrollFrame = Instance.new("ScrollingFrame")
-scrollFrame.Size = UDim2.new(1, -12, 1, -72)
-scrollFrame.Position = UDim2.new(0, 6, 0, 66)
+scrollFrame.Size = UDim2.new(1, -12, 1, -78)
+scrollFrame.Position = UDim2.new(0, 6, 0, 72)
 scrollFrame.BackgroundTransparency = 1
 scrollFrame.BorderSizePixel = 0
 scrollFrame.ScrollBarThickness = 5
-scrollFrame.ScrollBarImageColor3 = Color3.fromRGB(90, 90, 90)
+scrollFrame.ScrollBarImageColor3 = Color3.fromRGB(170, 0, 0)
 scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
 scrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 scrollFrame.Parent = mainFrame
@@ -681,14 +610,14 @@ contentPadding.Parent = content
 local function makeSection(title)
 	local section = Instance.new("Frame")
 	section.Size = UDim2.new(1, 0, 0, 0)
-	section.BackgroundColor3 = Color3.fromRGB(24, 24, 24)
+	section.BackgroundColor3 = Color3.fromRGB(16, 16, 16)
 	section.BorderSizePixel = 0
 	section.AutomaticSize = Enum.AutomaticSize.Y
 	section.Parent = content
 	Instance.new("UICorner", section).CornerRadius = UDim.new(0, 8)
 
 	local s = Instance.new("UIStroke", section)
-	s.Color = Color3.fromRGB(50, 50, 50)
+	s.Color = Color3.fromRGB(50, 0, 0)
 	s.Thickness = 1
 
 	local header = Instance.new("TextLabel")
@@ -696,7 +625,7 @@ local function makeSection(title)
 	header.Position = UDim2.new(0, 10, 0, 4)
 	header.BackgroundTransparency = 1
 	header.Text = title
-	header.TextColor3 = Color3.fromRGB(180, 180, 180)
+	header.TextColor3 = Color3.fromRGB(200, 40, 40)
 	header.Font = Enum.Font.GothamBold
 	header.TextSize = 14
 	header.TextXAlignment = Enum.TextXAlignment.Left
@@ -731,7 +660,7 @@ end
 
 local function makeToggle(parent, name, default, callback)
 	local frame = Instance.new("Frame")
-	frame.BackgroundColor3 = Color3.fromRGB(32, 32, 32)
+	frame.BackgroundColor3 = Color3.fromRGB(24, 24, 24)
 	frame.BorderSizePixel = 0
 	frame.Parent = parent
 	Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 6)
@@ -741,7 +670,7 @@ local function makeToggle(parent, name, default, callback)
 	label.Position = UDim2.new(0, 10, 0, 0)
 	label.BackgroundTransparency = 1
 	label.Text = name
-	label.TextColor3 = Color3.fromRGB(210, 210, 210)
+	label.TextColor3 = Color3.fromRGB(230, 230, 230)
 	label.Font = Enum.Font.Gotham
 	label.TextSize = 13
 	label.TextXAlignment = Enum.TextXAlignment.Left
@@ -751,7 +680,7 @@ local function makeToggle(parent, name, default, callback)
 	local toggle = Instance.new("TextButton")
 	toggle.Size = UDim2.new(0, 42, 0, 22)
 	toggle.Position = UDim2.new(1, -50, 0.5, -11)
-	toggle.BackgroundColor3 = default and Color3.fromRGB(90, 90, 90) or Color3.fromRGB(45, 45, 45)
+	toggle.BackgroundColor3 = default and Color3.fromRGB(160, 0, 0) or Color3.fromRGB(45, 45, 45)
 	toggle.Text = ""
 	toggle.Parent = frame
 	Instance.new("UICorner", toggle).CornerRadius = UDim.new(1, 0)
@@ -759,7 +688,7 @@ local function makeToggle(parent, name, default, callback)
 	local circle = Instance.new("Frame")
 	circle.Size = UDim2.new(0, 16, 0, 16)
 	circle.Position = default and UDim2.new(1, -19, 0.5, -8) or UDim2.new(0, 3, 0.5, -8)
-	circle.BackgroundColor3 = Color3.fromRGB(230, 230, 230)
+	circle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 	circle.BorderSizePixel = 0
 	circle.Parent = toggle
 	Instance.new("UICorner", circle).CornerRadius = UDim.new(1, 0)
@@ -768,7 +697,7 @@ local function makeToggle(parent, name, default, callback)
 	connect(toggle.MouseButton1Click, function()
 		state = not state
 		local goalPos = state and UDim2.new(1, -19, 0.5, -8) or UDim2.new(0, 3, 0.5, -8)
-		local goalColor = state and Color3.fromRGB(90, 90, 90) or Color3.fromRGB(45, 45, 45)
+		local goalColor = state and Color3.fromRGB(160, 0, 0) or Color3.fromRGB(45, 45, 45)
 		Services.TweenService:Create(circle, TweenInfo.new(0.15), {Position = goalPos}):Play()
 		Services.TweenService:Create(toggle, TweenInfo.new(0.15), {BackgroundColor3 = goalColor}):Play()
 		local ok, err = xpcall(function()
@@ -780,16 +709,16 @@ end
 
 local function makeButton(parent, name, callback)
 	local btn = Instance.new("TextButton")
-	btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+	btn.BackgroundColor3 = Color3.fromRGB(40, 0, 0)
 	btn.Text = name
-	btn.TextColor3 = Color3.fromRGB(200, 200, 200)
+	btn.TextColor3 = Color3.fromRGB(255, 80, 80)
 	btn.Font = Enum.Font.GothamBold
 	btn.TextSize = 13
 	btn.Parent = parent
 	Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
 
 	local s = Instance.new("UIStroke", btn)
-	s.Color = Color3.fromRGB(70, 70, 70)
+	s.Color = Color3.fromRGB(120, 0, 0)
 	s.Thickness = 1
 
 	connect(btn.MouseButton1Click, function()
@@ -799,10 +728,10 @@ local function makeButton(parent, name, callback)
 		if not ok then warn("[ESP Rainbow Deluxe] Button error: " .. tostring(err)) end
 	end)
 	connect(btn.MouseEnter, function()
-		Services.TweenService:Create(btn, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(55, 55, 55)}):Play()
+		Services.TweenService:Create(btn, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(60, 0, 0)}):Play()
 	end)
 	connect(btn.MouseLeave, function()
-		Services.TweenService:Create(btn, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(40, 40, 40)}):Play()
+		Services.TweenService:Create(btn, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(40, 0, 0)}):Play()
 	end)
 	return btn
 end
@@ -842,8 +771,6 @@ makeToggle(extra, "Chams", false, function(v)
 end)
 makeToggle(extra, "Head Dot", false, function(v) Settings.HeadDotEnabled = v end)
 makeToggle(extra, "Skeleton", false, function(v) Settings.SkeletonEnabled = v end)
-makeToggle(extra, "Gun ESP (Others)", false, function(v) Settings.GunESPEnabled = v end)
-makeToggle(extra, "My Gun ESP", false, function(v) Settings.MyGunESPEnabled = v end)
 
 connect(Services.UserInputService.InputBegan, function(input, gp)
 	if gp then return end
@@ -870,7 +797,6 @@ local function cleanPlayer(player)
 			for _, l in pairs(PlayerData.Skeletons[player]) do if l then l:Remove() end end
 			PlayerData.Skeletons[player] = nil
 		end
-		if PlayerData.GunBoxes[player] then PlayerData.GunBoxes[player]:Remove() PlayerData.GunBoxes[player] = nil end
 		applyChams(player, false)
 	end)
 end
