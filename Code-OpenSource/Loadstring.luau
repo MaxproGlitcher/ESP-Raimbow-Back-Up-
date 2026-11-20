@@ -46,6 +46,8 @@ local Settings = {
 	XRayEnabled = false,
 	TracersEnabled = true,
 	BoxesEnabled = true,
+	BoxStyle = "Corner", 
+	BoxThickness = 1.6,
 	NamesEnabled = true,
 	ShowDistance = true,
 	ShowHealth = true,
@@ -158,14 +160,27 @@ local function createHealthBar()
 end
 
 local function createBox()
-	local success, box = pcall(function()
-		local b = Drawing.new("Square")
-		b.Thickness = 2
-		b.Filled = false
-		b.Transparency = 1
-		return b
+	local success, result = pcall(function()
+		if Settings.BoxStyle == "Corner" then
+			local lines = {}
+			for i = 1, 8 do
+				local l = Drawing.new("Line")
+				l.Thickness = Settings.BoxThickness
+				l.Transparency = 1
+				l.Visible = false
+				lines[i] = l
+			end
+			return {type = "Corner", lines = lines}
+		else
+			local b = Drawing.new("Square")
+			b.Thickness = Settings.BoxThickness
+			b.Filled = false
+			b.Transparency = 1
+			b.Visible = false
+			return {type = "2D", box = b}
+		end
 	end)
-	if success then return box end
+	if success then return result end
 end
 
 local function createDot()
@@ -237,15 +252,38 @@ local function getBones(char)
 	}
 end
 
+local function hideBox(boxData)
+	if not boxData then return end
+	if boxData.type == "Corner" and boxData.lines then
+		for _, l in ipairs(boxData.lines) do
+			if l then l.Visible = false end
+		end
+	elseif boxData.box then
+		boxData.box.Visible = false
+	end
+end
+
+local function destroyBox(boxData)
+	if not boxData then return end
+	if boxData.type == "Corner" and boxData.lines then
+		for _, l in ipairs(boxData.lines) do
+			if l then l:Remove() end
+		end
+	elseif boxData.box then
+		boxData.box:Remove()
+	end
+end
+
 local function update()
 	pcall(function()
 		camera = Services.Workspace.CurrentCamera or camera
 		if not camera then return end
 		worldToViewportPoint = camera.WorldToViewportPoint
+
 		if not Settings.ESPEnabled or not lpr.Character or not lpr.Character:FindFirstChild("HumanoidRootPart") then
 			for _, v in pairs(PlayerData.Tracers) do if v then v.Visible = false end end
 			for _, v in pairs(PlayerData.InfoTexts) do if v and v.gui then v.gui.Enabled = false end end
-			for _, v in pairs(PlayerData.Hitboxes) do if v then v.Visible = false end end
+			for _, v in pairs(PlayerData.Hitboxes) do hideBox(v) end
 			for _, v in pairs(PlayerData.HealthBars) do if v then v.bg.Visible = false v.bar.Visible = false end end
 			for _, v in pairs(PlayerData.HeadDots) do if v then v.Visible = false end end
 			for _, sk in pairs(PlayerData.Skeletons) do for _, l in pairs(sk) do if l then l.Visible = false end end end
@@ -253,6 +291,7 @@ local function update()
 		end
 
 		local time = tick()
+
 		for _, player in pairs(Services.Players:GetPlayers()) do
 			if player ~= lpr and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
 				local root = player.Character.HumanoidRootPart
@@ -266,7 +305,7 @@ local function update()
 				if not shouldShow(player) then
 					if PlayerData.Tracers[player] then PlayerData.Tracers[player].Visible = false end
 					if PlayerData.InfoTexts[player] then PlayerData.InfoTexts[player].gui.Enabled = false end
-					if PlayerData.Hitboxes[player] then PlayerData.Hitboxes[player].Visible = false end
+					hideBox(PlayerData.Hitboxes[player])
 					if PlayerData.HealthBars[player] then PlayerData.HealthBars[player].bg.Visible = false PlayerData.HealthBars[player].bar.Visible = false end
 					if PlayerData.HeadDots[player] then PlayerData.HeadDots[player].Visible = false end
 					if PlayerData.Skeletons[player] then for _, l in pairs(PlayerData.Skeletons[player]) do if l then l.Visible = false end end end
@@ -279,18 +318,26 @@ local function update()
 							PlayerData.InfoTexts[player] = data
 						end
 					end
-					if not PlayerData.Hitboxes[player] then PlayerData.Hitboxes[player] = createBox() end
+
+					
+					if not PlayerData.Hitboxes[player] or PlayerData.Hitboxes[player].type ~= Settings.BoxStyle then
+						if PlayerData.Hitboxes[player] then
+							destroyBox(PlayerData.Hitboxes[player])
+						end
+						PlayerData.Hitboxes[player] = createBox()
+					end
+
 					if not PlayerData.HealthBars[player] then PlayerData.HealthBars[player] = createHealthBar() end
 					if not PlayerData.HeadDots[player] then PlayerData.HeadDots[player] = createDot() end
 					if not PlayerData.Skeletons[player] then PlayerData.Skeletons[player] = createSkeleton() end
 
 					local tracer = PlayerData.Tracers[player]
 					local info = PlayerData.InfoTexts[player]
-					local box = PlayerData.Hitboxes[player]
+					local boxData = PlayerData.Hitboxes[player]
 					local hbar = PlayerData.HealthBars[player]
 					local dot = PlayerData.HeadDots[player]
 					local skel = PlayerData.Skeletons[player]
-					local col = getColor(time, player.UserId)
+					local col = getColor(time, player.UserId) -- ← Rainbow ici
 
 					if onScreen then
 						if Settings.TracersEnabled and tracer then
@@ -336,14 +383,58 @@ local function update()
 								end
 							end
 
-							if Settings.BoxesEnabled and box then
+							
+							if Settings.BoxesEnabled and boxData then
 								local size = math.clamp((hp - sp).Magnitude * 2.1, 18, 120)
-								box.Size = Vector2.new(size, size * 2.15)
-								box.Position = Vector2.new(sp.X - size/2, sp.Y - size * 1.05)
-								box.Color = col
-								box.Visible = true
-							elseif box then
-								box.Visible = false
+								local boxW = size
+								local boxH = size * 2.15
+								local boxX = sp.X - boxW / 2
+								local boxY = sp.Y - boxH * 0.55
+
+								if boxData.type == "Corner" and boxData.lines then
+									local cl = math.clamp(boxW * 0.25, 5, 20)
+									local x1, y1 = boxX, boxY
+									local x2, y2 = x1 + boxW, y1 + boxH
+									local lines = boxData.lines
+
+									
+									lines[1].From = Vector2.new(x1, y1)
+									lines[1].To   = Vector2.new(x1 + cl, y1)
+									lines[2].From = Vector2.new(x1, y1)
+									lines[2].To   = Vector2.new(x1, y1 + cl)
+
+									
+									lines[3].From = Vector2.new(x2, y1)
+									lines[3].To   = Vector2.new(x2 - cl, y1)
+									lines[4].From = Vector2.new(x2, y1)
+									lines[4].To   = Vector2.new(x2, y1 + cl)
+
+									
+									lines[5].From = Vector2.new(x1, y2)
+									lines[5].To   = Vector2.new(x1 + cl, y2)
+									lines[6].From = Vector2.new(x1, y2)
+									lines[6].To   = Vector2.new(x1, y2 - cl)
+
+									
+									lines[7].From = Vector2.new(x2, y2)
+									lines[7].To   = Vector2.new(x2 - cl, y2)
+									lines[8].From = Vector2.new(x2, y2)
+									lines[8].To   = Vector2.new(x2, y2 - cl)
+
+									for i = 1, 8 do
+										lines[i].Color = col          -- ← Rainbow
+										lines[i].Thickness = Settings.BoxThickness
+										lines[i].Visible = true
+									end
+								elseif boxData.type == "2D" and boxData.box then
+									boxData.box.Size = Vector2.new(boxW, boxH)
+									boxData.box.Position = Vector2.new(boxX, boxY)
+									boxData.box.Color = col          -- ← Rainbow
+									boxData.box.Thickness = Settings.BoxThickness
+									boxData.box.Visible = true
+								end
+							else
+								hideBox(boxData)
 							end
 
 							if Settings.HealthBarEnabled and hbar then
@@ -406,7 +497,7 @@ local function update()
 							end
 						else
 							if info then info.gui.Enabled = false end
-							if box then box.Visible = false end
+							hideBox(boxData)
 							if hbar then hbar.bg.Visible = false hbar.bar.Visible = false end
 							if dot then dot.Visible = false end
 							if skel then for _, l in pairs(skel) do if l then l.Visible = false end end end
@@ -414,7 +505,7 @@ local function update()
 					else
 						if tracer then tracer.Visible = false end
 						if info then info.gui.Enabled = false end
-						if box then box.Visible = false end
+						hideBox(boxData)
 						if hbar then hbar.bg.Visible = false hbar.bar.Visible = false end
 						if dot then dot.Visible = false end
 						if skel then for _, l in pairs(skel) do if l then l.Visible = false end end end
@@ -429,6 +520,7 @@ local function update()
 	end)
 end
 
+
 ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "ESPRainbowDeluxe"
 ScreenGui.ResetOnSpawn = false
@@ -437,16 +529,13 @@ ScreenGui.Parent = lpr:WaitForChild("PlayerGui")
 
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "Main"
-mainFrame.Size = UDim2.new(0, 520, 0, 510)
-mainFrame.Position = UDim2.new(0.5, -260, 0.5, -255)
+mainFrame.Size = UDim2.new(0, 520, 0, 540)
+mainFrame.Position = UDim2.new(0.5, -260, 0.5, -270)
 mainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 mainFrame.BorderSizePixel = 0
 mainFrame.Active = true
 mainFrame.Parent = ScreenGui
 Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 12)
-
-local uiScale = Instance.new("UIScale")
-uiScale.Parent = mainFrame
 
 local stroke = Instance.new("UIStroke", mainFrame)
 stroke.Color = Color3.fromRGB(180, 0, 0)
@@ -471,7 +560,7 @@ local VersionLabel = Instance.new("TextLabel")
 VersionLabel.Size = UDim2.new(0, 90, 0, 16)
 VersionLabel.Position = UDim2.new(0, 16, 0, 6)
 VersionLabel.BackgroundTransparency = 1
-VersionLabel.Text = "Version 1.2"
+VersionLabel.Text = "Version 1.3"
 VersionLabel.TextColor3 = Color3.fromRGB(255, 50, 50)
 VersionLabel.Font = Enum.Font.GothamBold
 VersionLabel.TextSize = 12
@@ -515,6 +604,7 @@ connect(CloseBtn.MouseButton1Click, function()
 	unload()
 end)
 
+
 local dragging, dragInput, dragStart, startPos
 local function updateDrag(input)
 	pcall(function()
@@ -544,6 +634,7 @@ end)
 connect(Services.UserInputService.InputChanged, function(input)
 	if dragging and input == dragInput then updateDrag(input) end
 end)
+
 
 local resizeBtn = Instance.new("TextButton")
 resizeBtn.Size = UDim2.new(0, 20, 0, 20)
@@ -700,10 +791,7 @@ local function makeToggle(parent, name, default, callback)
 		local goalColor = state and Color3.fromRGB(160, 0, 0) or Color3.fromRGB(45, 45, 45)
 		Services.TweenService:Create(circle, TweenInfo.new(0.15), {Position = goalPos}):Play()
 		Services.TweenService:Create(toggle, TweenInfo.new(0.15), {BackgroundColor3 = goalColor}):Play()
-		local ok, err = xpcall(function()
-			callback(state)
-		end, debug.traceback)
-		if not ok then warn("[ESP Rainbow Deluxe] Toggle error: " .. tostring(err)) end
+		pcall(callback, state)
 	end)
 end
 
@@ -722,10 +810,7 @@ local function makeButton(parent, name, callback)
 	s.Thickness = 1
 
 	connect(btn.MouseButton1Click, function()
-		local ok, err = xpcall(function()
-			callback()
-		end, debug.traceback)
-		if not ok then warn("[ESP Rainbow Deluxe] Button error: " .. tostring(err)) end
+		pcall(callback)
 	end)
 	connect(btn.MouseEnter, function()
 		Services.TweenService:Create(btn, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(60, 0, 0)}):Play()
@@ -772,6 +857,19 @@ end)
 makeToggle(extra, "Head Dot", false, function(v) Settings.HeadDotEnabled = v end)
 makeToggle(extra, "Skeleton", false, function(v) Settings.SkeletonEnabled = v end)
 
+
+local boxStyleBtn
+boxStyleBtn = makeButton(extra, "Box Style: " .. Settings.BoxStyle, function()
+	Settings.BoxStyle = Settings.BoxStyle == "Corner" and "2D" or "Corner"
+	boxStyleBtn.Text = "Box Style: " .. Settings.BoxStyle
+
+	
+	for player, boxData in pairs(PlayerData.Hitboxes) do
+		destroyBox(boxData)
+		PlayerData.Hitboxes[player] = nil
+	end
+end)
+
 connect(Services.UserInputService.InputBegan, function(input, gp)
 	if gp then return end
 	if input.KeyCode == Enum.KeyCode.RightShift then
@@ -786,7 +884,10 @@ local function cleanPlayer(player)
 			PlayerData.InfoTexts[player].gui:Destroy()
 			PlayerData.InfoTexts[player] = nil
 		end
-		if PlayerData.Hitboxes[player] then PlayerData.Hitboxes[player]:Remove() PlayerData.Hitboxes[player] = nil end
+		if PlayerData.Hitboxes[player] then
+			destroyBox(PlayerData.Hitboxes[player])
+			PlayerData.Hitboxes[player] = nil
+		end
 		if PlayerData.HealthBars[player] then
 			PlayerData.HealthBars[player].bg:Remove()
 			PlayerData.HealthBars[player].bar:Remove()
