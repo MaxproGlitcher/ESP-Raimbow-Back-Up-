@@ -1,4 +1,4 @@
-# ESP-Raimbow-Back-Up-
+# ESP-Raimbow-Deluxe
 This script is the brand-new version of the project a complete rewrite that's way better, haha👀
 
  # Loadstring Script 
